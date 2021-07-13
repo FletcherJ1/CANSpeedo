@@ -1,6 +1,8 @@
 # OBD Digital Speedometer
 This project sparked from not having a digital speed readout on the dashboard of my car (Alfa Romeo Giulietta) when driving in 'Normal' and 'Dynamic' mode. This uses the OBD-II port to read the vehicle speed and then print the speed onto the radio message. This radio message is sent from the radio module to the dashboard and requires the 'Radio Repetition' setting in the dashboard to be enabled for the message to be displayed. This message is sent only when the car is on and is sent at a 2hz rate.
 
+Put picture of speedo readout.
+
 ## Vehicle information
 The CAN network used is a 50Kbps network and is defined as the CAN-B network on the car (pins 1 and 9 on the OBD-2 port).
 
@@ -16,11 +18,7 @@ The PCB is designed using Kicad 5.99 and is made to fit an [OBD-2 case](https://
 ![OBD-2 Plug Picture](https://raw.githubusercontent.com/FletcherJ1/CANSpeedo/main/Pictures/obd-2-plug.jpg)
 
 The PCB is a 4 layer design because it didn't cost any more than a 2 layer design from JLCPCB.
-
-
-Hardware used.
-Picture of results
-Open about current issues
+![PCB Design](https://raw.githubusercontent.com/FletcherJ1/CANSpeedo/main/Hardware/Plots/Hardware/plots/CANduino-brd.svg)
 
 ## Data dumps
 I've also included some data dumps (under the /Dumps folder) containing can information when the car is in various states. Feel free to use this information as desired to decode additional parts of the cars CAN data.
