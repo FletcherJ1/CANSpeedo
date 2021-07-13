@@ -17,28 +17,17 @@
  *  - OBD-II Diagnostics port (B-CAN network is used - pins 1/9)
  *  - Pinout for OBD-II: https://www.alfaobd.com/AlfaOBD_Android_Help.pdf
  * 
- * Prog Space:
- *  Teensy 2.0: 7104 Flash Bytes, 117 RAM bytes
  *  
  * Credit:
- *  FIAT Character Map: https://gist.github.com/fmntf/c4b2744bad3908ef10fc9a5d377f2823
- *  Fiat CAN hacking blog post: https://medium.com/@fmntf/fiat-infotainment-can-messages-67591a22ed2f
  *  MCP2515 Library: https://github.com/autowp/arduino-mcp2515
  * 
  * Author: James Fletcher
  * Date: 25/04/2021
  */
 
- /*
-  * TODO: Sleep Mode - Put MCU into standby when no CAN msg is received for 1 second...
-  *  Then wake up periodically to check for CAN activity. If CAN activity don't sleep.
-  * 
-  */
-
 #define SPEED_DIVIDER_MPH 23 // Found by trail/error and data-logging.
 
 // Found by CAN bus sniffing
-// Possibly changes from 8xxxxxx to 0
 #define CAN_ID_RADIO_STATION 0x0A194005
 #define CAN_ID_VEHICLE_SPEED 0x04394000
 
@@ -46,12 +35,12 @@ CAN_FRAME frame;
 
 unsigned long lastPrint = 0;
 
-uint16_t current_speed = 0;
+uint16_t currentSpeed = 0;
 
 bool halfSecond = false;
 
 void setup() {
-  // Disable ADC
+  // Disable unused peripherals to save power
   ADCSRA = 0;
   power_adc_disable();
   power_spi_disable();
@@ -60,16 +49,15 @@ void setup() {
   
   // Setup CAN stuff
   Can0.begin(CAN_BPS_50K);
-
-  Can0.setNumTXBoxes(1);                                    // Keep one mailbox for sending
-
+  // 1 box for sending
+  Can0.setNumTXBoxes(1);
+  // 2 boxes for receiving with no filtering
   int filter;
-
-  for (filter = 0; filter < 2; filter++) {                  //Set up 2 of the boxes for extended
+  for (filter = 0; filter < 2; filter++) {
     Can0.setRXFilter(filter, 0, 0, true);
   }
-
-  while (Can0.setRXFilter(0, 0, false) > 0) ;              // Set up the remaining MObs for standard messages.
+  // consume remaining boxes.
+  while (Can0.setRXFilter(0, 0, false) > 0);
 
   lastPrint = millis();
 }
@@ -79,8 +67,8 @@ void send_speed_frame() {
  CAN_FRAME frame;
  memset(&frame, 0, sizeof(frame));
 
- // Could implement over 99 but the speedo is a lost cause at that point.
- uint16_t speed = current_speed;
+ // Currently only supports 2 characters for number.
+ uint16_t speed = currentSpeed;
  if (speed > 99) speed = 99;
 
  char tens = speed / 10;
@@ -96,6 +84,7 @@ void send_speed_frame() {
  // Put speed msg into the frame (0-9 only needs lower 4 bits of char map)
  frame.data.bytes[0] = (tens & 0xF) << 2;
  frame.data.bytes[1] = ( (digits & 0xF) << 4 ) | 0xA;
+ // 'MPH' character encoding...
  frame.data.bytes[2] = 0x18;
  frame.data.bytes[3] = 0x6D;
  frame.data.bytes[4] = 0x30;
@@ -112,30 +101,18 @@ void loop() {
     if (Can0.read(incoming)) {
       if (incoming.id == CAN_ID_RADIO_STATION) {
         // send a frame inpersonating the radio station frame to update the 
-        // speed of the vehicle, hides the radio frame. Do quickly to prevent flicker.
+        // speed of the vehicle, hides the radio frame. Done quickly to prevent flicker.
         send_speed_frame();
         lastPrint = millis();
         halfSecond = false;
       } else if (incoming.id == CAN_ID_VEHICLE_SPEED) { // Same data in ID: 0x84214006
         uint16_t speed = (incoming.data.bytes[0] << 8) + incoming.data.bytes[1];
         speed /= SPEED_DIVIDER_MPH; // Magic value to get to MPH.
-        current_speed = speed;
+        currentSpeed = speed;
       }
     }
   }
   
-  /*Serial.print(frame.can_id, HEX); // print ID
-  Serial.print(" "); 
-  Serial.print(frame.can_dlc, HEX); // print DLC
-  Serial.print(" ");
-  
-  for (int i = 0; i < frame.can_dlc; i++)  {  // print the data
-    Serial.print(frame.data[i],HEX);
-    Serial.print(" ");
-  }
-
-  Serial.println();*/
-
   // Print every half-second, 1 hz felt too slow.
   if (millis() - lastPrint > 500 && halfSecond == false) {
     halfSecond = true;
