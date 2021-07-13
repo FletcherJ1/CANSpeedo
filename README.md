@@ -18,7 +18,7 @@ The PCB is designed using Kicad 5.99 and is made to fit an [OBD-2 case](https://
 ![OBD-2 Plug Picture](https://raw.githubusercontent.com/FletcherJ1/CANSpeedo/main/Pictures/obd-2-plug.jpg)
 
 The PCB is a 4 layer design because it didn't cost any more than a 2 layer design from JLCPCB.
-![PCB Design](https://raw.githubusercontent.com/FletcherJ1/CANSpeedo/main/Hardware/Plots/Hardware/plots/CANduino-brd.svg)
+![PCB Design](https://raw.githubusercontent.com/FletcherJ1/CANSpeedo/main/Pictures/pcb_design.jpg)
 
 ## Data dumps
 I've also included some data dumps (under the /Dumps folder) containing can information when the car is in various states. Feel free to use this information as desired to decode additional parts of the cars CAN data.
