@@ -2,7 +2,9 @@
 This project sparked from not having a digital speed readout on the dashboard of my car (Alfa Romeo Giulietta) when driving in 'Normal' and 'Dynamic' mode. This uses the OBD-II port to read the vehicle speed and then print the speed onto the radio message. This radio message is sent from the radio module to the dashboard and requires the 'Radio Repetition' setting in the dashboard to be enabled for the message to be displayed. This message is sent only when the car is on and is sent at a 2hz rate.
 
 The end result of this is shown below while I was testing the display output:
-<img src="https://raw.githubusercontent.com/FletcherJ1/CANSpeedo/main/Pictures/speedo_readout.jpg" width="220" height="300">
+<p align="center">
+    <img src="https://raw.githubusercontent.com/FletcherJ1/CANSpeedo/main/Pictures/speedo_readout.jpg" width="220" height="300">
+</p>
 
 ## Vehicle information
 The CAN network used is a 50Kbps network and is defined as the CAN-B network on the car (pins 1 and 9 on the OBD-2 port).
