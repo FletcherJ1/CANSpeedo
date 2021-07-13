@@ -1,0 +1,222 @@
+ODB-2 Pin-out:
+
+	1 - B-CAN+
+	2 - 
+	3 - 
+	4 - Engine Ground
+	5 - Signal Ground
+	6 - C-CAN+
+	7 - 
+	8 - 
+	9 - B-CAN-
+	10 - 
+	11 - 
+	12 - K Line engine compartment (Xenon headlamp ECU)
+	13 - 
+	14 - C-CAN-
+	15 - 
+	16 - Battery +12v
+
+20:23:20.352 -> 86314003 8 0 0 50 0 0 8 0 0 
+20:23:20.352 -> 8A314003 8 6D 2 A0 14 60 0 FD C0 
+20:23:20.352 -> 8A394003 8 61 42 65 55 60 42 DE 80 <-- Bitshifts next message below kinda
+									0101 0101 0110 0000 0100 0010 1101 1110 1000 0000
+									1010 1010 1100 0000 1000 0101 0111 1010 0000 0000
+20:23:20.352 -> 8C014003 8 9 41 A5 E3 80 C4 0 0 
+20:23:20.392 -> 8C214003 6 19 27 8 4 20 21
+
+->
+Normal display in N-mode
+20:23:21.353 -> 86314003 8 0 0 50 0 0 8 0 0 
+
+20:23:21.353 -> 8A314003 8 6D 2 A0 14 60 0 FD C0 
+20:23:21.353 -> 8A394003 8 61 42 65 AA C0 85 7A 0 
+20:23:21.353 -> 8C014003 8 9 41 A5 E3 80 C4 0 0 
+20:23:21.393 -> 8C214003 6 19 27 8 4 20 21
+
+
+Dashboard - (Date, Time, Temperature, Mileage, Speedo, Tacho, Fuel, Temperature, Status Lights, Door Status, Lights Status, MPG, Trip A, Trip B, Boost guage, Text / logos, Digital Speed, Parking Sensors, Backlight, Faults)
+
+Mileage - 0108003 = 1 a5 e3
+	This relates to the following CAN FRAME:
+		8C014003 - 9 4M MM MM 80 C4 0 0
+		Key: M = mileage in hex, no encoding
+
+Date & Time
+	8C214003 6 19 27 08 04 20 21
+			   HH MM DD mm YY YY
+			Key:   
+			   HH = Hours
+			   MM = Minutes
+			   DD = Day
+			   mm = Month
+			   YYYY = Year
+
+Line 11580 (Shutdown & Ignition On):
+	20:21:25.876 -> 8E094000 6 0 1B 0 0 0 1 
+	20:22:22.328 -> 8E094018 2 0 4 
+
+Id example:
+	8C214003
+	
+	Id Splits down the middle
+	8C21 - Topic / subject / action?
+	4003 - Device id?
+
+Body Computer - 0x4000
+Instrument Panel - 0x4003
+Radio Unit - 0x4005
+Blue&Me - 0x4021
+Parking Sensors - 0x4018 
+
+Some modules send keep-alives every x milliseconds.
+
+Parking sensor information:
+	CAN ID : 0x06314018 ;
+	Data Length Code : 8 bytes ;
+	Data Field :
+		- Ignition off : frame not sent ;
+		- On , neutral : C0 00 00 0F 0F 00 00 00 ;
+		- On , reverse , no obstacle : 00 00 00 0F 0F 00 00 00 ;
+		- On , reverse , central obstacle : 03 00 00 0X 0X Y0 00 00 ,
+		X : chime sound frequency ,
+		Y : distance reported on driver ’s LCD.
+
+Try to unpack entries with the text bitmap to see if that shows anything obvious
+
+
+Radio:
+
+8A194005 7 A2 8A 28 A2 8A 28 80 <-- Display blank line on radio
+8A194005 7 4D 03 1D 7E 8A 28 00 < -- 'HEART   ' (end of string)
+8A114005 6 46 04 1E 00 A 00 <-- 0x041E = 1054 / 10 = 105.4 Mhz
+           XX AB CD
+
+0xABCD / 10 = Radio Frequency
+
+Engine RPM:
+	14:34:30.338 -> 84214001 8 00 80 80 2C 04 A6 24 00 
+	14:34:30.338 -> 84214001 8 VV 80 80 CC 0R RR OO 00 
+	04 AC -> Engine RPM (Max 13 bits?)
+	Interval: 50ms
+	
+	2C (CC) -> Coolant temperature? (Seems to increase slowly overtime)
+	24 (OO) -> Oil pressure? (Seems to corrolate to engine rpm value of ~30 at idle, 60 at ~1.8k rpm, might be too high though)
+	00 (vv) -> Vehicle speed? (Mph or kph?)
+
+Engine related things:
+	14:34:51.245 -> 84294001 8 00 00 04 00 00 10 00 00
+	14:34:51.245 -> 84294001 8 00 00 XX 00 00 10 00 00 
+	
+	04 (XX) -> Throttle maybe? Possibly not.
+				Follows changes with RPM, sits at 5 at idle (25 at 1.8k RPM).
+				Slowly increases when engine is first turned on.
+
+    (from body computer):
+		14:35:14.646 -> 863D4000 4 60 4A 00 20 
+		14:35:14.646 -> 863D4000 4 60 XX 00 20 
+	
+		4A (XX) - Seems to be engine related? (idle 75 up to 90 at revs, very slow and low data rate)
+
+Other potentially interesting IDs:
+	86214000 - 298 messages
+	86254000 - 292 messages
+	86314000 - 292 messages
+	84394000 - 729 messages
+	84214006 - 379 messages (8 zeros)
+	84214002 - 386 messages (only 2 bytes - zeros)
+	84214001 - 777 messages (~decoded)
+	84294001 - 776 messages (engine related?)
+	82214000 - 293 messages
+
+According to giulietta manual the following are on
+B-CAN:
+NBC (M001) - Nodo body computer (Body computer) - Known
+NAG (H066) - Nodo assetto sedile conducente (Driver seat node?) - Not fitted
+NAP (H067) - Nodo assetto sedile passeggero (Passenger seat node?) - Not fitted
+NSP (M084) - Nodo sensore di parcheggio (Parking sensor) - Known
+NAB (M060) - Nodo airbag (Airbag)
+NQS (E050) - Nodo quadro strumenti (Instrument node) - Known
+NRR (P020) - Nodo radio ricevitore (Radio receiver) - Known
+RMN (P020) - Navigatore a mappe (GPS? - Map navigator) - Not fitted
+NCV (M162) - Nodo centralina bluetooth (Bluetooth control unit) - Known? (B&M)
+EOBD (R010) - Connecttore di diagnosi (Diagnostic Connector) - Unneeded
+NCL (M070) - Nodo climatizzatore (Air conditioning node)
+
+M001 - Body Computer
+H066 - Movement controls front seat for driver
+H067 - Movement controls front seat for passenger
+M084 - parking sensor control unit
+M060 - Airbag control unit
+E050 - Instrument framework
+P020 - car radio
+M162 - convergence control unit (bluetooth)
+R010 - Diagnosis
+M070 - air conditioning control unit
+
+Radio Char Map (packed 6 bits and padded at end with zeros):
+000000       (end of string)
+000001       0
+000010       1
+000011       2
+000100       3
+000101       4
+000110       5
+000111       6
+001000       7
+001001       8
+001010       9
+001011       .
+001100       A
+001101       B
+001110       C
+001111       D
+010000       E
+010001       F
+010010       G
+010011       H
+010100       I
+010101       J
+010110       K
+010111       L
+011000       M
+011001       N
+011010       O
+011011       P
+011100       Q
+011101       R
+011110       S
+011111       T
+100000       U
+100001       V
+100010       W
+100011       X
+100100       Y
+100101       Z
+100110       ñ
+100111       ç
+101000       (white space)
+101001       Ğ
+101010       i
+101011       j
+101100       §
+101101       À
+101110       Ä
+101111       ŭ
+110000       Ü
+110001       9
+110010       _
+110011       _
+110100       _
+110101       ?
+110110       °
+110111       !
+111000       +
+111001       -
+111010       :
+111011       /
+111100       #
+111101       *
+111110       _
+111111       (field separator)
+https://gist.github.com/fmntf/c4b2744bad3908ef10fc9a5d377f2823
